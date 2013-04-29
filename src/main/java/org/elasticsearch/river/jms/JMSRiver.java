@@ -158,15 +158,12 @@ public class JMSRiver extends AbstractRiverComponent implements River {
     @Override
     public void start() {
         logger.info("Creating an JMS river: user [{}], broker [{}], sourceType [{}], sourceName [{}]",
-                user,
-                providerUrl,
-                sourceType,
-                sourceName
+                user, providerUrl, sourceType, sourceName
         );
         
         try {
           ctx = getInitialContext();
-        	connectionFactory = (ConnectionFactory) ctx.lookup(connectionFactoryName);
+          connectionFactory = (ConnectionFactory) ctx.lookup(connectionFactoryName);
         	//connectionFactory = new ConnectionFactory(user, password, providerUrl);
         } 
         catch (NamingException ne) {            
@@ -223,7 +220,7 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                     session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
                     destination = (Destination) ctx.lookup(sourceName);
                     
-                    //TODO Figure out how to get createQueue/createTopic to work
+                    //TODO Figure out how to get createQueue/createTopic to work in WebLogic
                     
                     /*
                     if (sourceType.equals("queue")) {
@@ -252,18 +249,14 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                     }
                 }
 
-
                 // define the queue
                 MessageConsumer consumer = null;
                 
                 try {
-                    if (createDurableConsumer && sourceType.equals("topic")) {
-                        if (!"".equals(topicFilterExpression)) {
+                    if (createDurableConsumer && "topic".equals(sourceType)) {
+                        if (topicFilterExpression != null && topicFilterExpression.length() > 0) {
                             consumer = session.createDurableSubscriber(
-                                    (Topic) destination, // topic name
-                                    consumerName, // consumer name
-                                    topicFilterExpression, // filter expression
-                                    true
+                                    (Topic) destination, consumerName, topicFilterExpression, true
                             );
                         } 
                         else {
@@ -271,7 +264,6 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                         }
                     } 
                     else {
-//                        consumer = session.createConsumer(destination, consumerName);
                         consumer = session.createConsumer(destination);
                     }
 
@@ -298,7 +290,7 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                         break;
                     }
                     
-                    Message message;
+                    Message message = null;
                     
                     try {
                         message = consumer.receive();
@@ -316,77 +308,48 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                     logger.info("check if message is of type textmessage");
                     
                     if (message != null && message instanceof TextMessage) {
-                        logger.info("it is of type textmessage");
-                        final List<String> deliveryTags = Lists.newArrayList();
+                        final List<Message> messages = Lists.newArrayList();
                         byte[] msgContent;
                         
                         try {
-                            TextMessage txtMessage = (TextMessage) message;
-
-                            msgContent = txtMessage.getText().getBytes();
-                            logger.info("message was [{}]", txtMessage.getText());
-
+                            msgContent = getMessageContent((TextMessage) message);
                         } 
                         catch (Exception e) {
-//                                logger.warn("failed to parse request for delivery tag [{}], ack'ing...", e, task.getJMSCorrelationID() );
-//                                try {
-//                                    channel.basicAck(task.getEnvelope().getDeliveryTag(), false);
-//                                } catch (IOException e1) {
-//                                    logger.warn("failed to ack [{}]", e1, task.getEnvelope().getDeliveryTag());
-//                                }
+                            logger.warn("failed to get message content for delivery tag [{}], ack'ing...", e, getMessageID(message));
+                            acknowledgeMessage(message);
                             continue;
                         }
 
-                        logger.info("preparing bulk");
                         BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
-                        logger.info("bulk prepared.. ");
 
                         try {
-                            logger.info("adding message to bulkRequestBuilder");
                             bulkRequestBuilder.add(msgContent, 0, msgContent.length, false);
-                            logger.info("added message to bulkRequestBuilder");
                         } 
                         catch (Exception e) {
-                            e.printStackTrace();
+                            logger.warn("failed to parse request for delivery tag [{}], ack'ing...", e, getMessageID(message));
+                            acknowledgeMessage(message);
+                            continue;
                         }
 
-                        logger.info("adding deliveryTags");
-                        try {
-                            deliveryTags.add(message.getJMSMessageID());
-                        } 
-                        catch (JMSException e) {
-                            logger.warn("failed to get JMS Message ID", e);
-                        }
+                        // Save for later acknowledgment.
+                        messages.add(message);
 
-                        logger.info("checking if numberOfActions [{}] < bulkSize [{}]", bulkRequestBuilder.numberOfActions(), bulkSize);
                         if (bulkRequestBuilder.numberOfActions() < bulkSize) {
-                            logger.info("it is..");
                             // try and spin some more of those without timeout, so we have a bigger bulk (bounded by the bulk size)
-                            try {
-                                logger.info("trying to get more messages, waiting 2000l ");
-                                while ((message = consumer.receive(bulkTimeout.millis())) != null) {
-                                    try {
-                                        byte[] content = ((TextMessage) message).getText().getBytes();
-                                        bulkRequestBuilder.add(content, 0, content.length, false);
-                                        deliveryTags.add(message.getJMSMessageID());
-                                    } 
-                                    catch (Exception e) {
-                                        logger.warn("failed to parse request for delivery tag [{}], ack'ing...", e, message.getJMSMessageID());
-//                                            try {
-//                                                channel.basicAck(task.getEnvelope().getDeliveryTag(), false);
-//                                            } catch (Exception e1) {
-//                                                logger.warn("failed to ack on failure [{}]", e1, task.getEnvelope().getDeliveryTag());
-//                                            }
-                                    }
-                                    
-                                    if (bulkRequestBuilder.numberOfActions() >= bulkSize) {
-                                        break;
-                                    }
+                            while ((message = consumer.receive(bulkTimeout.millis())) != null) {
+                                try {
+                                    msgContent = getMessageContent(message);
+                                    bulkRequestBuilder.add(msgContent, 0, msgContent.length, false);
+                                    messages.add(message);
+                                } 
+                                catch (Exception e) {
+                                    logger.warn("failed to parse request for message ID [{}], ack'ing...", e, getMessageID(message));
+                                    acknowledgeMessage(message);
                                 }
-                            } 
-                            catch (JMSException e) {
-                                logger.info("catched an exception [{}]", e);
-                                e.printStackTrace();
+                                
+                                if (bulkRequestBuilder.numberOfActions() >= bulkSize) {
+                                    break;
+                                }
                             }
                         }
 
@@ -394,9 +357,7 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                             logger.trace("executing bulk with [{}] actions", bulkRequestBuilder.numberOfActions());
                         }
 
-                        logger.info("if is ordered... ");
                         if (ordered) {
-                            logger.info("it is ordered.. ");
                             try {
                                 BulkResponse response = bulkRequestBuilder.execute().actionGet();
                                 
@@ -405,12 +366,8 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                                     logger.warn("failed to execute" + response.buildFailureMessage());
                                 }
                                 
-                                for (String deliveryTag : deliveryTags) {
-//                                        try {
-//                                            channel.basicAck(deliveryTag, false);
-//                                        } catch (Exception e1) {
-//                                            logger.warn("failed to ack [{}]", e1, deliveryTag);
-//                                        }
+                                for (Message message : messages) {
+                                	acknowledgeMessage(message);
                                 }
                             } 
                             catch (Exception e) {
@@ -426,29 +383,64 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                                         logger.warn("failed to execute" + response.buildFailureMessage());
                                     }
                                     
-                                    for (String deliveryTag : deliveryTags) {
-//                                            try {
-//                                                channel.basicAck(deliveryTag, false);
-//                                            } catch (Exception e1) {
-//                                                logger.warn("failed to ack [{}]", e1, deliveryTag);
-//                                            }
+                                    for (Message message : messages) {
+                                    	acknowledgeMessage(message);
                                     }
                                 }
 
                                 @Override
                                 public void onFailure(Throwable e) {
-                                    logger.warn("failed to execute bulk for delivery tags [{}], not ack'ing", e, deliveryTags);
+                                    logger.warn("failed to execute bulk for delivery tags [{}], not ack'ing", e, messages);
                                 }
                             });
                         }
                     } 
-                    else {
-                        logger.warn("it is not ... :(");
-                    }
                 }
             }
             
             cleanup(0, "closing river");
+        }
+
+        private void acknowledgeMessage(Message msg) {
+           try {
+               message.acknowledge();
+           } 
+           catch (IOException e1) {
+               logger.warn("failed to ack [{}]", e1, getMessageID(message));
+           }         
+        }
+        
+        private byte[] getMessageContent(Message msg) {
+        	String text = ((TextMessage) msg).getText();         
+        	byte[] content = null;
+         
+         	// Body no longer needed. Save some memory on large batches.
+         	msg.clearBody();
+         
+         	if (text != null && text.length() > 0)
+          		logger.info("message was [{}]", msg.getText());
+          		content = text.getBytes();
+         	}
+         
+         	return content;
+        }
+
+        private String getMessageID(Message msg) {
+          	if (msg == null) {
+           		return null;
+          	}
+          
+          	String msgId = null;
+          
+          	try {
+           		msgId = msg.getJMSMessageID();
+          	}
+          	catch (JMSException e) {
+           		logger.warn("failed to get JMS Message ID", e);
+           		msgId = null;
+          	}
+          
+          	return msgId;
         }
 
         private void cleanup(int code, String message) {

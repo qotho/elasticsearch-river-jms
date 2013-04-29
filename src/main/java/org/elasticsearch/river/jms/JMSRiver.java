@@ -263,7 +263,7 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                                     (Topic) destination, // topic name
                                     consumerName, // consumer name
                                     topicFilterExpression, // filter expression
-                                    true // ?? TODO - lookup java doc as soon as network connection is back.
+                                    true
                             );
                         } 
                         else {
@@ -383,10 +383,6 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                                         break;
                                     }
                                 }
-//                                } catch (InterruptedException e) {
-//                                    if (closed) {
-//                                        break;
-//                                    }
                             } 
                             catch (JMSException e) {
                                 logger.info("catched an exception [{}]", e);

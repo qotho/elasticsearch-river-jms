@@ -293,7 +293,7 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                     Message message = null;
                     
                     try {
-                        message = consumer.receive();
+                        message = receiveNextMessage(consumer, 0);
                         logger.info("got a message [{}]", message);
                     } 
                     catch (Exception e) {
@@ -336,7 +336,7 @@ public class JMSRiver extends AbstractRiverComponent implements River {
 
                         if (bulkRequestBuilder.numberOfActions() < bulkSize) {
                             // try and spin some more of those without timeout, so we have a bigger bulk (bounded by the bulk size)
-                            while ((message = consumer.receive(bulkTimeout.millis())) != null) {
+                            while ((message = receiveNextMessage(consumer, bulkTimeout.millis())) != null) {
                                 try {
                                     msgContent = getMessageContent(message);
                                     bulkRequestBuilder.add(msgContent, 0, msgContent.length, false);
@@ -366,8 +366,8 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                                     logger.warn("failed to execute" + response.buildFailureMessage());
                                 }
                                 
-                                for (Message message : messages) {
-                                	acknowledgeMessage(message);
+                                for (Message msg : messages) {
+                                	acknowledgeMessage(msg);
                                 }
                             } 
                             catch (Exception e) {
@@ -401,24 +401,37 @@ public class JMSRiver extends AbstractRiverComponent implements River {
             cleanup(0, "closing river");
         }
 
+        private Message receiveNextMessage(MessageConsumer consumer, long timeout) {
+        	Message msg = null;
+        	
+        	try {
+				msg = consumer.receive(bulkTimeout.millis());
+			} 
+        	catch (JMSException e) {
+                logger.warn("failed to retrieve next message.");
+			}
+        	
+        	return msg;
+        }
+        
         private void acknowledgeMessage(Message msg) {
            try {
-               message.acknowledge();
+               msg.acknowledge();
            } 
-           catch (IOException e1) {
-               logger.warn("failed to ack [{}]", e1, getMessageID(message));
+           catch (JMSException e) {
+               logger.warn("failed to ack [{}]", e, getMessageID(msg));
            }         
         }
         
-        private byte[] getMessageContent(Message msg) {
+        private byte[] getMessageContent(Message msg) throws JMSException {
         	String text = ((TextMessage) msg).getText();         
         	byte[] content = null;
          
          	// Body no longer needed. Save some memory on large batches.
          	msg.clearBody();
          
-         	if (text != null && text.length() > 0)
-          		logger.info("message was [{}]", msg.getText());
+         	if (text != null && text.length() > 0) {
+          		logger.info("message was [{}]", text);
           		content = text.getBytes();
          	}
          

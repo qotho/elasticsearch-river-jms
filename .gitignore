@@ -1,6 +1,14 @@
+/data
+/work
+/logs
+/target
+/.settings
+/.project
+/.classpath
 *.class
 
 # Package Files #
 *.jar
 *.war
 *.ear
+

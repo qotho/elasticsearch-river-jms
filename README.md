@@ -4,7 +4,7 @@ Java Messaging Service (JMS) River Plugin for ElasticSearch
 The JMS River provides a means of submitting bulk indexing requests to elasticsearch using a JMS queue. 
 The format of the messages follows the elasticsearch bulk API format:
 
-  { "index" : { "_index" : "twitter", "_type" : "tweet", "_id" : "1" } }
+	{ "index" : { "_index" : "twitter", "_type" : "tweet", "_id" : "1" } }
 	{ "tweet" : { "text" : "this is a tweet" } }
 	{ "delete" : { "_index" : "twitter", "_type" : "tweet", "_id" : "2" } }
 	{ "create" : { "_index" : "twitter", "_type" : "tweet", "_id" : "1" } }

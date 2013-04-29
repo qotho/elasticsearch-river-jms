@@ -36,6 +36,8 @@ Creating the JMS river is as simple as (all configuration parameters are provide
 	    }
 	}'
 
+Valid values for the sourceType property are either "queue" or "topic". The durable and filter options are only available for topics.
+
 The river automatically batches queue messages if the queue is overloaded, allowing for faster catchup with the messages streamed into the queue. 
 
 The `ordered` flag indicates whether messages will be indexed in the same order as they arrive in the queue by blocking on the bulk request before picking up the next data to be indexed. It can also be used as a simple way to throttle indexing.

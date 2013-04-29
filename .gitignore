@@ -2,9 +2,6 @@
 /work
 /logs
 /target
-/.settings
-/.project
-/.classpath
 *.class
 
 # Package Files #

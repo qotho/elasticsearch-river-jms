@@ -3,12 +3,12 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.elasticsearch</groupId>
-	<artifactId>elasticsearch-river-activemq</artifactId>
-	<name>elasticsearch-river-activemq</name>
+	<artifactId>elasticsearch-river-jms</artifactId>
+	<name>elasticsearch-river-jms</name>
 	<version>1.0</version>
 	<packaging>jar</packaging>
-	<description>ActiveMQ River for ElasticSearch</description>
-	<inceptionYear>2012</inceptionYear>
+	<description>JMS River for ElasticSearch</description>
+	<inceptionYear>2013</inceptionYear>
 	<licenses>
 		<license>
 			<name>The Apache Software License, Version 2.0</name>
@@ -17,9 +17,9 @@
 		</license>
 	</licenses>
 	<scm>
-		<connection>scm:git:git@github.com:domdorn/elasticsearch-river-activemq.git</connection>
-		<developerConnection>scm:git:git@github.com:domdorn/elasticsearch-river-activemq.git</developerConnection>
-		<url>http://github.com/domdorn/elasticsearch-river-activemq</url>
+		<connection>scm:git:git@github.com:iooab23/elasticsearch-river-jms.git</connection>
+		<developerConnection>scm:git:git@github.com:iooab23/elasticsearch-river-jms.git</developerConnection>
+		<url>http://github.com/iooab23/elasticsearch-river-jms</url>
 	</scm>
 
 	<parent>

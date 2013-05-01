@@ -402,7 +402,7 @@ public class JmsRiver extends AbstractRiverComponent implements River {
         	Message msg = null;
         	
         	try {
-				msg = consumer.receive(bulkTimeout.millis());
+				msg = consumer.receive(timeout);
 			} 
         	catch (JMSException e) {
                 logger.warn("failed to retrieve next message.");

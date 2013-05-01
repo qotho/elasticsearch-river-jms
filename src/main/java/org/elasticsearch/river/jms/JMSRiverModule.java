@@ -25,10 +25,10 @@ import org.elasticsearch.river.River;
 /**
  * @author Steve Sarandos
  */
-public class JMSRiverModule extends AbstractModule {
+public class JmsRiverModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        bind(River.class).to(JMSRiver.class).asEagerSingleton();
+        bind(River.class).to(JmsRiver.class).asEagerSingleton();
     }
 }

@@ -14,7 +14,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-public class JMSQueueSender {
+public class JmsQueueSender {
   public final static String JNDI_FACTORY = "weblogic.jndi.WLInitialContextFactory";
 	public final static String JMS_FACTORY = "jms/ElasticSearchConnFactory";
 
@@ -25,7 +25,7 @@ public class JMSQueueSender {
 	private Queue queue;
 	private TextMessage msg;
 
-	public JMSQueueSender(String providerUrl, String queueName) throws NamingException,	JMSException {
+	public JmsQueueSender(String providerUrl, String queueName) throws NamingException,	JMSException {
 		InitialContext ctx = getInitialContext(providerUrl);
 		qconFactory = (QueueConnectionFactory) ctx.lookup(JMS_FACTORY);
 		qcon = qconFactory.createQueueConnection();

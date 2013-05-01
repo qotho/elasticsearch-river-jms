@@ -22,15 +22,15 @@ package org.elasticsearch.plugin.river.jms;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.river.RiversModule;
-import org.elasticsearch.river.jms.JMSRiverModule;
+import org.elasticsearch.river.jms.JmsRiverModule;
 
 /**
  * @author Steve Sarandos
  */
-public class JMSRiverPlugin extends AbstractPlugin {
+public class JmsRiverPlugin extends AbstractPlugin {
 
     @Inject
-    public JMSRiverPlugin() {
+    public JmsRiverPlugin() {
     }
 
     @Override
@@ -44,6 +44,6 @@ public class JMSRiverPlugin extends AbstractPlugin {
     }
 
     public void onModule(RiversModule module) {
-        module.registerRiver("jms", JMSRiverModule.class);
+        module.registerRiver("jms", JmsRiverModule.class);
     }
 }

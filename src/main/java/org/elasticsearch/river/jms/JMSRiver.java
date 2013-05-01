@@ -56,13 +56,13 @@ import org.elasticsearch.river.RiverSettings;
  *
  * @author Steve Sarandos
   */
-public class JMSRiver extends AbstractRiverComponent implements River {
+public class JmsRiver extends AbstractRiverComponent implements River {
 
     public final String defaultUser = null;
     public final String defaultPassword = null;
-    public final String defaultContextFactory = "weblogic.jndi.WLInitialContextFactory";
-    public final String defaultConnectionFactoryName = "jms/ElasticSearchConnFactory";
-    public final String defaultProviderUrl = "t3://localhost:7001";
+    public final String defaultContextFactory = "org.apache.activemq.jndi.ActiveMQInitialContextFactory";
+    public final String defaultConnectionFactoryName = "ConnectionFactory";
+    public final String defaultProviderUrl = "vm://localhost";
     public static final String defaultSourceType = "queue"; // topic
     public static final String defaultSourceName = "elasticsearch";
     public final String defaultConsumerName;
@@ -96,7 +96,7 @@ public class JMSRiver extends AbstractRiverComponent implements River {
 
     @SuppressWarnings({"unchecked"})
     @Inject
-    public JMSRiver(RiverName riverName, RiverSettings settings, Client client) {
+    public JmsRiver(RiverName riverName, RiverSettings settings, Client client) {
         super(riverName, settings);
         this.client = client;
         this.defaultConsumerName = "jms_elasticsearch_river_" + riverName().name();
@@ -139,7 +139,7 @@ public class JMSRiver extends AbstractRiverComponent implements River {
             bulkSize = XContentMapValues.nodeIntegerValue(indexSettings.get("bulk_size"), 100);
             
             if (indexSettings.containsKey("bulk_timeout")) {
-                bulkTimeout = TimeValue.parseTimeValue(XContentMapValues.nodeStringValue(indexSettings.get("bulk_timeout"), "10ms"), TimeValue.timeValueMillis(10));
+                bulkTimeout = TimeValue.parseTimeValue(XContentMapValues.nodeStringValue(indexSettings.get("bulk_timeout"), "10000ms"), TimeValue.timeValueMillis(10000));
             } 
             else {
                 bulkTimeout = TimeValue.timeValueMillis(10);
@@ -218,18 +218,16 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                     connection = connectionFactory.createConnection();
                     connection.setClientID(consumerName);
                     session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-                    destination = (Destination) ctx.lookup(sourceName);
+                    //destination = (Destination) ctx.lookup(sourceName);
                     
                     //TODO Figure out how to get createQueue/createTopic to work in WebLogic
                     
-                    /*
                     if (sourceType.equals("queue")) {
                         destination = session.createQueue(sourceName);
                     } 
                     else {
                         destination = session.createTopic(sourceName);
                     }
-                    */
                 } 
                 catch (Exception e) {
                     if (!closed) {
@@ -294,7 +292,6 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                     
                     try {
                         message = receiveNextMessage(consumer, 0);
-                        logger.info("got a message [{}]", message);
                     } 
                     catch (Exception e) {
                         if (!closed) {
@@ -304,10 +301,10 @@ public class JMSRiver extends AbstractRiverComponent implements River {
                         cleanup(0, "failed to get message");
                         break;
                     }
-                    
-                    logger.info("check if message is of type textmessage");
-                    
+                                        
                     if (message != null && message instanceof TextMessage) {
+                        logger.info("got a message [{}]", message);
+
                         final List<Message> messages = Lists.newArrayList();
                         byte[] msgContent;
                         

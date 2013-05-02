@@ -1,5 +1,17 @@
 package org.elasticsearch.river.jms;
 
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.Topic;
+
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.TransportConnector;
@@ -12,11 +24,6 @@ import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 import org.junit.Assert;
 import org.junit.Test;
-
-import javax.jms.*;
-import java.io.IOException;
-
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class ActiveMQTest {
 
@@ -53,11 +60,19 @@ public class ActiveMQTest {
     private void startElasticSearchInstance() throws IOException {
         Node node = NodeBuilder.nodeBuilder().settings(
         		ImmutableSettings.settingsBuilder().put("gateway.type", "none")).node();
+        Map<String, String> settings = new HashMap<String, String>();
+        settings.put("jndiProviderUrl", "tcp://localhost:61616");
+        settings.put("jndiContextFactory", "org.apache.activemq.jndi.ActiveMQInitialContextFactory");
+        settings.put("connectionFactory", "ElasticSearchConnFactory");
+        settings.put("sourceType", "topic");
+        settings.put("sourceName", JmsRiver.defaultSourceName);
+
         client = node.client();
         client.prepareIndex("_river", "test1", "_meta").setSource(
         		jsonBuilder()
         			.startObject()
         				.field("type", "jms")
+        				.field("jms", settings)
         			.endObject()
         		).execute().actionGet();
     }
@@ -76,7 +91,7 @@ public class ActiveMQTest {
 
         // assure that the index is not yet there
         try {
-            ListenableActionFuture future = client.prepareGet("test", "type1", "1").execute();
+            ListenableActionFuture<GetResponse> future = client.prepareGet("test", "type1", "1").execute();
             future.actionGet();
             Assert.fail();
         } catch (IndexMissingException idxExcp) {
@@ -90,7 +105,7 @@ public class ActiveMQTest {
         try {
             Connection conn = factory.createConnection();
             Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue queue = session.createQueue(JmsRiver.defaultSourceName);
+            Topic queue = session.createTopic(JmsRiver.defaultSourceName);
             MessageProducer producer = session.createProducer(queue);
             producer.send(session.createTextMessage(message));
 
@@ -103,7 +118,7 @@ public class ActiveMQTest {
         Thread.sleep(3000l);
 
         {
-            ListenableActionFuture future = client.prepareGet("test", "type1", "1").execute();
+            ListenableActionFuture<GetResponse> future = client.prepareGet("test", "type1", "1").execute();
             Object o = future.actionGet();
             GetResponse resp = (GetResponse) o;
             Assert.assertEquals("{ \"type1\" : { \"field1\" : \"value1\" } }", resp.getSourceAsString());

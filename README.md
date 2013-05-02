@@ -18,10 +18,10 @@ Creating the JMS river is as simple as (all configuration parameters are provide
 	curl -XPUT 'localhost:9200/_river/my_river/_meta' -d '{
 	    "type" : "jms",
 	    "jms" : {
-	        "providerUrl" : "t3://localhost:7001", 
+	        "jndiProviderUrl" : "t3://localhost:7001", 
+	        "jndiContextFactory" : "weblogic.jndi.WLInitialContextFactory",
 	        "user" : "guest",
 	        "pass" : "guest",
-	        "contextFactory" : "weblogic.jndi.WLInitialContextFactory",
 	        "connectionFactory" : "jms/ElasticSearchConnFactory",
 	        "sourceType" : "queue",
 	        "sourceName" : "jms/elasticsearch",

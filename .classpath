@@ -15,6 +15,8 @@
 	<classpathentry including="**/*.java" kind="src" path="src/main/resources"/>
 	<classpathentry kind="src" path="src/main/assemblies"/>
 	<classpathentry including="**/*.java" kind="src" path="src/test/resources"/>
+	<classpathentry kind="lib" path="lib/wlclient.jar"/>
+	<classpathentry kind="lib" path="lib/wljmsclient.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
@@ -25,13 +27,5 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/activemq-broker-5.8.0.jar"/>
-	<classpathentry kind="lib" path="lib/activemq-client-5.8.0.jar"/>
-	<classpathentry kind="lib" path="lib/slf4j-api-1.6.6.jar"/>
-	<classpathentry kind="lib" path="lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar"/>
-	<classpathentry kind="lib" path="lib/geronimo-jms_1.1_spec-1.1.1.jar"/>
-	<classpathentry kind="lib" path="lib/activemq-kahadb-store-5.8.0.jar"/>
-	<classpathentry kind="lib" path="lib/activemq-protobuf-1.1.jar"/>
-	<classpathentry kind="lib" path="lib/activemq-openwire-legacy-5.8.0.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

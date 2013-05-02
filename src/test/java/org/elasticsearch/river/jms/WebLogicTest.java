@@ -22,6 +22,8 @@ package org.elasticsearch.river.jms;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.jms.JMSException;
 
@@ -38,7 +40,7 @@ import org.junit.Test;
 /**
  * @author Steve Sarandos
  */
-public class JmsRiverTest {
+public class WebLogicTest {
 
     final String message = "{ \"index\" : { \"_index\" : \"test\", \"_type\" : \"type1\", \"_id\" : \"1\" }\n" +
             "{ \"type1\" : { \"field1\" : \"value1\" } }\n" +
@@ -60,13 +62,21 @@ public class JmsRiverTest {
     private void startElasticSearchInstance() throws IOException {
         Node node = NodeBuilder.nodeBuilder().settings(
           	ImmutableSettings.settingsBuilder().put("gateway.type", "none")).node();
+        Map<String, String> settings = new HashMap<String, String>();
+        settings.put("jndiProviderUrl", "t3://localhost:7001");
+        settings.put("jndiContextFactory", "weblogic.jndi.WLInitialContextFactory");
+        settings.put("connectionFactory", "jms/ElasticSearchConnFactory");
+        settings.put("sourceType", "queue");
+        settings.put("sourceName", JmsRiver.defaultSourceName);
+
         client = node.client();
         client.prepareIndex("_river", "test1", "_meta").setSource(
-        			jsonBuilder()
-        				.startObject()
-        					.field("type", "jms")
-        				.endObject())
-        			.execute().actionGet();
+        		jsonBuilder()
+        			.startObject()
+        				.field("type", "jms")
+        				.field("jms", settings)
+        			.endObject()
+        		).execute().actionGet();
     }
 
     private void stopElasticSearchInstance() {
@@ -78,14 +88,12 @@ public class JmsRiverTest {
 
     @Test
     public void testSimpleScenario() throws Exception {
-    	/*
         startJMSSender();
         startElasticSearchInstance();
 
-
         // assure that the index is not yet there
         try {
-            ListenableActionFuture future = client.prepareGet("test", "type1", "1").execute();
+            ListenableActionFuture<GetResponse> future = client.prepareGet("test", "type1", "1").execute();
             future.actionGet();
             Assert.fail();
         } 
@@ -104,7 +112,7 @@ public class JmsRiverTest {
         Thread.sleep(3000l);
 
         {
-            ListenableActionFuture future = client.prepareGet("test", "type1", "1").execute();
+            ListenableActionFuture<GetResponse> future = client.prepareGet("test", "type1", "1").execute();
             Object o = future.actionGet();
             GetResponse resp = (GetResponse) o;
             Assert.assertEquals("{ \"type1\" : { \"field1\" : \"value1\" } }", resp.getSourceAsString());
@@ -113,17 +121,9 @@ public class JmsRiverTest {
         }
 
 
-//        System.out.println("stopping elastic search");
         stopElasticSearchInstance();
-//        Thread.sleep(3000l);
         stopJMSSender();
 
         Thread.sleep(3000l);
-//        stomp_client.send("/elasticsearch", message);
-
-
-//        Thread.sleep(100000);
- * 
- */
     }
 }

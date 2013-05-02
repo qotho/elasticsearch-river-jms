@@ -102,23 +102,23 @@ public class JmsRiver extends AbstractRiverComponent implements River {
         this.defaultConsumerName = "jms_elasticsearch_river_" + riverName().name();
 
         if (settings.settings().containsKey("jms")) {
-            Map<String, Object> activeMQSettings = (Map<String, Object>) settings.settings().get("jms");
-            user = XContentMapValues.nodeStringValue(activeMQSettings.get("user"), defaultUser);
-            password = XContentMapValues.nodeStringValue(activeMQSettings.get("pass"), defaultPassword);
-            providerUrl = XContentMapValues.nodeStringValue(activeMQSettings.get("providerUrl"), defaultProviderUrl);
-            contextFactory = XContentMapValues.nodeStringValue(activeMQSettings.get("contextFactory"), defaultContextFactory);
-            connectionFactoryName = XContentMapValues.nodeStringValue(activeMQSettings.get("connectionFactory"), defaultConnectionFactoryName);
-            sourceType = XContentMapValues.nodeStringValue(activeMQSettings.get("sourceType"), defaultSourceType);
+            Map<String, Object> jmsSettings = (Map<String, Object>) settings.settings().get("jms");
+            user = XContentMapValues.nodeStringValue(jmsSettings.get("user"), defaultUser);
+            password = XContentMapValues.nodeStringValue(jmsSettings.get("pass"), defaultPassword);
+            providerUrl = XContentMapValues.nodeStringValue(jmsSettings.get("jndiProviderUrl"), defaultProviderUrl);
+            contextFactory = XContentMapValues.nodeStringValue(jmsSettings.get("jndiContextFactory"), defaultContextFactory);
+            connectionFactoryName = XContentMapValues.nodeStringValue(jmsSettings.get("connectionFactory"), defaultConnectionFactoryName);
+            sourceType = XContentMapValues.nodeStringValue(jmsSettings.get("sourceType"), defaultSourceType);
             sourceType = sourceType.toLowerCase();
             
             if (!"queue".equals(sourceType) && !"topic".equals(sourceType)) {
                 throw new IllegalArgumentException("Specified an invalid source type for the JMS River. Please specify either 'queue' or 'topic'");
             }
             
-            sourceName = XContentMapValues.nodeStringValue(activeMQSettings.get("sourceName"), defaultSourceName);
-            consumerName = XContentMapValues.nodeStringValue(activeMQSettings.get("consumerName"), defaultConsumerName);
-            createDurableConsumer = XContentMapValues.nodeBooleanValue(activeMQSettings.get("durable"), defaultCreateDurableConsumer);
-            topicFilterExpression = XContentMapValues.nodeStringValue(activeMQSettings.get("filter"), defaultTopicFilterExpression);
+            sourceName = XContentMapValues.nodeStringValue(jmsSettings.get("sourceName"), defaultSourceName);
+            consumerName = XContentMapValues.nodeStringValue(jmsSettings.get("consumerName"), defaultConsumerName);
+            createDurableConsumer = XContentMapValues.nodeBooleanValue(jmsSettings.get("durable"), defaultCreateDurableConsumer);
+            topicFilterExpression = XContentMapValues.nodeStringValue(jmsSettings.get("filter"), defaultTopicFilterExpression);
 
         } 
         else {
@@ -139,7 +139,8 @@ public class JmsRiver extends AbstractRiverComponent implements River {
             bulkSize = XContentMapValues.nodeIntegerValue(indexSettings.get("bulk_size"), 100);
             
             if (indexSettings.containsKey("bulk_timeout")) {
-                bulkTimeout = TimeValue.parseTimeValue(XContentMapValues.nodeStringValue(indexSettings.get("bulk_timeout"), "10000ms"), TimeValue.timeValueMillis(10000));
+                bulkTimeout = TimeValue.parseTimeValue(XContentMapValues.nodeStringValue(
+                		indexSettings.get("bulk_timeout"), "10s"), TimeValue.timeValueMillis(10000));
             } 
             else {
                 bulkTimeout = TimeValue.timeValueMillis(10);
@@ -164,7 +165,6 @@ public class JmsRiver extends AbstractRiverComponent implements River {
         try {
           ctx = getInitialContext();
           connectionFactory = (ConnectionFactory) ctx.lookup(connectionFactoryName);
-        	//connectionFactory = new ConnectionFactory(user, password, providerUrl);
         } 
         catch (NamingException ne) {            
         	throw new ElasticSearchException("Unable to create connection factory.", ne);
@@ -218,16 +218,17 @@ public class JmsRiver extends AbstractRiverComponent implements River {
                     connection = connectionFactory.createConnection();
                     connection.setClientID(consumerName);
                     session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-                    //destination = (Destination) ctx.lookup(sourceName);
+                    destination = (Destination) ctx.lookup(sourceName);
                     
                     //TODO Figure out how to get createQueue/createTopic to work in WebLogic
-                    
+                    /*
                     if (sourceType.equals("queue")) {
                         destination = session.createQueue(sourceName);
                     } 
                     else {
                         destination = session.createTopic(sourceName);
                     }
+                    */
                 } 
                 catch (Exception e) {
                     if (!closed) {
@@ -303,7 +304,9 @@ public class JmsRiver extends AbstractRiverComponent implements River {
                     }
                                         
                     if (message != null && message instanceof TextMessage) {
-                        logger.info("got a message [{}]", message);
+                 		if (logger.isInfoEnabled()) {
+                 			logger.info("got a message [{}]", message);
+                 		}
 
                         final List<Message> messages = Lists.newArrayList();
                         byte[] msgContent;
@@ -428,7 +431,9 @@ public class JmsRiver extends AbstractRiverComponent implements River {
          	msg.clearBody();
          
          	if (text != null && text.length() > 0) {
-          		logger.info("message was [{}]", text);
+         		if (logger.isTraceEnabled()) {
+         			logger.trace("message was [{}]", text);
+         		}
           		content = text.getBytes();
          	}
          

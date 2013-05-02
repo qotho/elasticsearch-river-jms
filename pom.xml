@@ -36,10 +36,17 @@
 		<maven-compiler-plugin.version>2.5.1</maven-compiler-plugin.version>
 		<maven-source-plugin.version>2.1.2</maven-source-plugin.version>
 		<maven-assembly-plugin.version>2.3</maven-assembly-plugin.version>
+		<weblogic.version>10.3</weblogic.version>
 	</properties>
 
 
 	<dependencies>
+		<dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-core</artifactId>
+            <version>${activemq.version}</version>
+        </dependency>
+
 
 		<dependency>
 			<groupId>org.apache.geronimo.specs</groupId>
@@ -67,7 +74,20 @@
 			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
-
+<!-- 
+		<dependency>
+			<groupId>weblogic</groupId>
+			<artifactId>wlclient</artifactId>
+			<version>${weblogic.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>weblogic</groupId>
+			<artifactId>wljmsclient</artifactId>
+			<version>${weblogic.version}</version>
+			<scope>provided</scope>
+		</dependency>
+ -->
 	</dependencies>
 
 	<repositories>

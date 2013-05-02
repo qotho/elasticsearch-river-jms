@@ -136,11 +136,11 @@ public class JmsRiver extends AbstractRiverComponent implements River {
 
         if (settings.settings().containsKey("index")) {
             Map<String, Object> indexSettings = (Map<String, Object>) settings.settings().get("index");
-            bulkSize = XContentMapValues.nodeIntegerValue(indexSettings.get("bulk_size"), 100);
+            bulkSize = XContentMapValues.nodeIntegerValue(indexSettings.get("bulkSize"), 100);
             
-            if (indexSettings.containsKey("bulk_timeout")) {
+            if (indexSettings.containsKey("bulkTimeout")) {
                 bulkTimeout = TimeValue.parseTimeValue(XContentMapValues.nodeStringValue(
-                		indexSettings.get("bulk_timeout"), "10s"), TimeValue.timeValueMillis(10000));
+                		indexSettings.get("bulkTimeout"), "10s"), TimeValue.timeValueMillis(10000));
             } 
             else {
                 bulkTimeout = TimeValue.timeValueMillis(10);

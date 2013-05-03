@@ -10,8 +10,8 @@ The format of the messages follows the elasticsearch bulk API format:
 	{ "create" : { "_index" : "twitter", "_type" : "tweet", "_id" : "1" } }
 	{ "tweet" : { "text" : "another tweet" } }    
 
-NOTE: DOESN'T WORK YET
-<del>In order to install the plugin, simply run: `bin/plugin -install iooab23/elasticsearch-river-jms/1.0.0`.</del>
+In order to install the plugin, simply run: `bin/plugin -url https://github.com/qotho/elasticsearch-river-jms/raw/master/releases/elasticsearch-river-jms-1.0.zip -install
+elasticsearch-river-jms`.
 
 Creating the JMS river is as simple as (all configuration parameters are provided, with default values):
 

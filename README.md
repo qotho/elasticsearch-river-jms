@@ -10,11 +10,15 @@ The format of the messages follows the elasticsearch bulk API format:
 	{ "create" : { "_index" : "twitter", "_type" : "tweet", "_id" : "1" } }
 	{ "tweet" : { "text" : "another tweet" } }    
 
+The river automatically batches queue messages.  It reads messages from the queue until it either has the maximum number of messages configured by the bulkSize setting, or the bulkTimeout has been reached and no more messages are in the queue. All collected messages are submitted as a single bulk request.
+
+Installation
+------------
 In order to install the plugin, simply run: 
 
 	bin/plugin -url http://bit.ly/122SLYK -install elasticsearch-river-jms`
 
-Creating the JMS river is as simple as (all configuration parameters are provided, with default values):
+Creating the JMS river in elasticsearch is as simple as:
 
 	curl -XPUT 'localhost:9200/_river/my_river/_meta' -d '{
 	    "type" : "jms",
@@ -36,12 +40,23 @@ Creating the JMS river is as simple as (all configuration parameters are provide
 	        "ordered" : false
 	    }
 	}'
+	
+Configuration Settings
+----------------------
 
-Valid values for the sourceType property are either "queue" or "topic". The durable and filter options are only available for topics.
-
-The river automatically batches queue messages if the queue is overloaded, allowing for faster catchup with the messages streamed into the queue. 
-
-The `ordered` flag indicates whether messages will be indexed in the same order as they arrive in the queue by blocking on the bulk request before picking up the next data to be indexed. It can also be used as a simple way to throttle indexing.
+- jndiProviderUrl: URL of the JNDI directory used to lookup the connection factory and queues/topics.
+- jndiContextFactory: The type of initial JNDI context factory.
+- user: The user name to be used for a secure JNDI connection.
+- pass: The password to be used for a secure JNDI connection.
+- connectionFactory: The JMS connection factory.
+- sourceType: Indicates whether the source is either a "queue" or "topic". 
+- sourceName: The queue or topic name.
+- consumerName: The name of the consumer or subscriber.
+- durable: Indicates whether the consumer is a durable subscriber.  This option is only available got topics.
+- filter: A message selector to only dequeue messages that match the given expression.
+- bulkSize: The maximum batch size (bulk actions) the river will submit to elasticsearch.
+- bulkTimeout: The length of time the river will wait for new messages to add to a batch.
+- ordered: Indicates whether the river should submit the bulk actions in the order it got them from the queue.  This setting can also be used a simple way to throttle indexing.
 
 License
 -------

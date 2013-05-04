@@ -16,7 +16,7 @@ Installation
 ------------
 In order to install the plugin, simply run: 
 
-	bin/plugin -url http://bit.ly/122SLYK -install elasticsearch-river-jms`
+	bin/plugin -url http://bit.ly/10e749R -install elasticsearch-river-jms`
 
 Creating the JMS river in elasticsearch is as simple as:
 
